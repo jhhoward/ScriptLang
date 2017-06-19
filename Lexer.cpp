@@ -3,21 +3,67 @@
 
 using namespace std;
 
-static const char* baseTokens = "(){}+-/*;=,";
-
-static const char* keywords[] =
+struct TokenMapping 
 {
-	"if",
-	"else",
-	"while",
-	"class",
-	"int",
-	"float",
-	"void",
-	"for",
-	"return",
+	const char* pattern;
+	const char* displayName;
 };
 
+static TokenMapping tokenPatterns[] =
+{
+	{ ";", "Terminator" },
+	{ "", "Identifier" },
+	{ "", "IntegerConstant" },
+	{ "", "FloatConstant" },
+	{ "(", "OpenBracket" },
+	{ ")", "CloseBracket" },
+	{ "*", "Multiply" },
+	{ "/", "Divide" },
+	{ "%", "Modulo" },
+	{ "+", "Add" },
+	{ "-", "Subtract" },
+	{ "<<", "LeftShift" },
+	{ ">>", "RightShift" },
+	{ "<", "LessThan" },
+	{ "<=", "LessThanOrEqualTo" },
+	{ ">", "GreaterThan" },
+	{ ">=", "GreaterThanOrEqualTo" },
+	{ "==", "EqualTo" },
+	{ "!=", "NotEqual" },
+	{ "&", "BitwiseAnd" },
+	{ "^", "BitwiseXor" },
+	{ "|", "BitwiseOr" },
+	{ "&&", "LogicalAnd" },
+	{ "||", "LogicalOr" },
+	{ "=", "Assign" },
+	{ "+=", "AddAssign" },
+	{ "-=", "SubtractAssign" },
+	{ "*=", "MultiplyAssign" },
+	{ "/=", "DivideAssign" },
+	{ "%=", "ModuloAssign" },
+	{ "<<=", "LeftShiftAssign" },
+	{ ">>=", "RightShiftAssign" },
+	{ "&=", "AndAssign" },
+	{ "^=", "XorAssign" },
+	{ "|=", "OrAssign" },
+	{ ",", "Comma" },
+	{ "if", "If" },
+	{ "else", "Else" },
+	{ "while", "While" },
+	{ "class", "Class" },
+	{ "int", "Int" },
+	{ "float", "Float" },
+	{ "void", "Void" },
+	{ "for", "For" },
+	{ "return", "Return" },
+	{ "error", "Error" },
+	{ "EOF", "EndOfFile" },
+};
+
+const std::string Token::GetTypeString()
+{
+	return tokenPatterns[(int) type].displayName;
+}
 
 Lexer::Lexer(const char* inputString) :
 	wholeInput(inputString),
@@ -68,23 +114,13 @@ Token Lexer::GetNext()
 		readChar = *ptr++;
 	}
 
-	if (readChar == '=')
-	{
-		if (ptr[1] == '=')
-		{
-			token.type = TokenType::Equals;
-			token.text = "==";
-			return token;
-		}
-	}
-
 	if (readChar == '/')
 	{
 		if (*ptr == '/')
 		{
-			while (!IsEOF() && !IsNewLine(*ptr))
+			while (!IsEOF() && !IsNewLine(readChar))
 			{
-				ptr++;
+				readChar = *ptr++;
 			}
 			while (IsWhiteSpace(readChar))
 			{
@@ -99,6 +135,7 @@ Token Lexer::GetNext()
 				if (*ptr == '*' && ptr[1] == '/')
 				{
 					ptr = ptr + 2;
+					readChar = *ptr;
 					break;
 				}
 			}
@@ -109,18 +146,50 @@ Token Lexer::GetNext()
 		}
 	}
 
-	for (const char* baseTokenPtr = baseTokens; *baseTokenPtr; baseTokenPtr++)
 	{
-		if (readChar == *baseTokenPtr)
+		int longestMatch = 0;
+
+		for (int n = 0; n < (int)TokenType::FirstKeyword; n++)
 		{
-			token.type = (TokenType) readChar;
-			token.text = string(1, readChar);
+			if (tokenPatterns[n].pattern[0] != '\0')
+			{
+				const char* patternPtr = tokenPatterns[n].pattern;
+				const char* comparePtr = ptr - 1;
+				bool match = true;
+				int matchLength = 0;
+
+				while (match && *patternPtr && *comparePtr)
+				{
+					if (*patternPtr != *comparePtr)
+					{
+						match = false;
+						break;
+					}
+					patternPtr++;
+					comparePtr++;
+					matchLength++;
+				}
+				match &= (*patternPtr == '\0');
+
+				if (match && matchLength > longestMatch)
+				{
+					longestMatch = matchLength;
+					token.type = (TokenType)(n);
+					token.text = tokenPatterns[n].pattern;
+				}
+			}
+		}
+
+		if (longestMatch > 0)
+		{
+			ptr += longestMatch - 1;
 			return token;
 		}
 	}
 
 	if (readChar == '\0')
 	{
+		--ptr;
 		token.type = TokenType::EndOfFile;
 		return token;
 	}
@@ -156,7 +225,7 @@ Token Lexer::GetNext()
 
 		for (int k = (int) TokenType::FirstKeyword; k <= (int) TokenType::LastKeyword; k++)
 		{
-			if (token.text == string(keywords[k - (int) TokenType::FirstKeyword]))
+			if (token.text == string(tokenPatterns[k].pattern))
 			{
 				token.type = (TokenType) k;
 				break;

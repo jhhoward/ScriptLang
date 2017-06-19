@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "Lexer.h"
 #include "Parser.h"
 
@@ -16,19 +19,26 @@ char* testInput2 =
 	"\treturn (a + b) / 2;\n"
 	"}\n";
 
+using namespace std;
+
 int main(int argc, char* argv[])
 {
-	Lexer lex(testInput);
+	ifstream inputFileStream("test.script");
+	stringstream inputBuffer;
+	inputBuffer << inputFileStream.rdbuf();
+	string inputData = inputBuffer.str();
 
-	printf("Input:\n%s\n", testInput);
+	cout << inputData << endl;
+
+	Lexer lex(inputData.c_str());
 
 	while (!lex.IsEOF())
 	{
 		Token tok = lex.GetNext();
-	//	printf("Token: %s ('%s')\n", tok.GetTypeString().c_str(), tok.text.c_str());
+		cout << "Token: " << tok.GetTypeString() << " ('" << tok.text << "')" << endl;
 	}
 
-	Parser parser(testInput);
+	Parser parser(inputData.c_str());
 
 	try
 	{

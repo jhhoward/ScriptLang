@@ -2,26 +2,47 @@
 
 #include <string>
 
-enum class TokenType : unsigned char
+enum class TokenType
 {
-	Invalid = 0,
-	Assign = '=',
-	Multiply = '*',
-	Divide = '/',
-	Add = '+',
-	Subtract = '-',
-	OpenBracket = '(',
-	CloseBracket = ')',
-	Comma = ',',
-	Terminator = ';',
-	Identifier = 128,
-	Equals,
+	Invalid = -1,
+	Terminator = 0,
+	Identifier,
 	IntegerConstant,
 	FloatConstant,
-	Error = 254,
-	EndOfFile = 255,
+	OpenBracket,
+	CloseBracket,
+	Multiply,
+	Divide,
+	Modulo,
+	Add,
+	Subtract,
+	LeftShift,
+	RightShift,
+	LessThan,
+	LessThanOrEqualTo,
+	GreaterThan,
+	GreaterThanOrEqualTo,
+	EqualTo,
+	NotEqual,
+	BitwiseAnd,
+	BitwiseXor,
+	BitwiseOr,
+	LogicalAnd,
+	LogicalOr,
+	Assign,
+	AddAssign,
+	SubtractAssign,
+	MultiplyAssign,
+	DivideAssign,
+	ModuloAssign,
+	LeftShiftAssign,
+	RightShiftAssign,
+	AndAssign,
+	XorAssign,
+	OrAssign,
+	Comma,
 
-	If = 192,
+	If,
 	Else,
 	While,
 	Class,
@@ -30,8 +51,12 @@ enum class TokenType : unsigned char
 	Void,
 	For,
 	Return,
+
+	Error,
+	EndOfFile,
+
 	FirstKeyword = If,
-	LastKeyword = Return
+	LastKeyword = Return,
 };
 
 class Token

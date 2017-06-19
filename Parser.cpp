@@ -65,7 +65,7 @@ void Parser::Factor()
 	}
 }
 
-void Parser::Term()
+/*void Parser::Term()
 {
 	Factor();
 
@@ -101,6 +101,124 @@ void Parser::Expression()
 	}
 }
 
+void Parser::Comparison()
+{
+	Expression();
+
+	switch (token.type)
+	{
+	case TokenType::Equals:
+		NextToken();
+		Comparison();
+
+		printf("CMP\n");
+		break;
+	}
+}*/
+
+void Parser::Expression(TokenType level)
+{
+	Factor();
+
+	while (token.type <= level)
+	{
+		switch (token.type)
+		{
+		case TokenType::Add:
+			NextToken();
+			Expression(TokenType::Add);
+
+			printf("ADD\n");
+			// TODO emit +
+			break;
+		case TokenType::Multiply:
+			NextToken();
+			Expression(TokenType::Multiply);
+
+			printf("MUL\n");
+			// TODO emit
+			break;
+		case TokenType::Divide:
+			NextToken();
+			Expression(TokenType::Multiply);
+
+			printf("DIV\n");
+			// TODO emit
+			break;
+		case TokenType::EqualTo:
+			NextToken();
+			Expression(TokenType::EqualTo);
+
+			printf("EQ\n");
+			break;
+		default:
+			return;
+		}
+	}
+}
+
+/*
+void Parser::Expression(int precedence)
+{
+	if (precedence > 1)
+	{
+		Expression(precedence - 1);
+	}
+	else
+	{
+		Factor();
+	}
+
+	switch (precedence)
+	{
+		case 3:
+		{
+			switch (token.type)
+			{
+			case TokenType::Multiply:
+				NextToken();
+				Expression(precedence);
+
+				printf("MUL\n");
+				// TODO emit
+				break;
+			}
+		}
+		break;
+
+		case 4:
+		{
+			switch (token.type)
+			{
+			case TokenType::Add:
+				NextToken();
+				Expression(precedence);
+
+				printf("ADD\n");
+				// TODO emit +
+				break;
+			}
+		}
+		break;
+
+		case 7:
+		{
+			switch (token.type)
+			{
+			case TokenType::EqualTo:
+				NextToken();
+				Expression(precedence);
+
+				printf("CMP\n");
+				break;
+			}
+		}
+		break;
+	}
+}
+*/
+
+
 void Parser::Assignment()
 {
 	Variable* targetVariable = FindVariable(token.text);
@@ -112,9 +230,23 @@ void Parser::Assignment()
 
 	switch (NextToken().type)
 	{
+	case TokenType::AddAssign:
+	{
+		if (!targetVariable->isAssigned)
+		{
+			ThrowParseException(string("Use of unassigned variable ") + token.text);
+		}
+		printf("PUSH %s\n", targetVariable->name.c_str());
+		NextToken();
+		Expression();
+		printf("ADD\n");
+		printf("ST %s\n", targetVariable->name.c_str());
+	}
+	break;
 	case TokenType::Assign:
 		{
 			NextToken();
+			//Comparison();
 			Expression();
 
 			printf("ST %s\n", targetVariable->name.c_str());
@@ -157,6 +289,7 @@ void Parser::Declare(VariableType variableType)
 			break;
 		case TokenType::Assign:
 			NextToken();
+			//Comparison();
 			Expression();
 
 			// TODO: emit assign
@@ -169,14 +302,33 @@ void Parser::Declare(VariableType variableType)
 	}
 }
 
+void Parser::IfBlock()
+{
+	NextToken();
+	Expect(TokenType::OpenBracket);
+	Expression();
+	// TODO: ensure boolean condition
+	Expect(TokenType::CloseBracket);
+}
+
 // Function call
 // Declaration
 // Assignment
 // { statements }
 void Parser::Statement()
 {
+	{
+		int lineNumber;
+		string line;
+		lexer.GetCurrentLineAndNumber(line, lineNumber);
+		printf("# %s\n", line.c_str());
+	}
+
 	switch (token.type)
 	{
+	case TokenType::If:
+		IfBlock();
+		break;
 	case TokenType::Int:
 		Declare(VariableType::Integer);
 		break;
@@ -225,6 +377,8 @@ Variable* Parser::DeclareVariable(VariableType variableType, std::string name)
 	{
 		ThrowParseException(name + string(" previously declared"));
 	}
+
+	printf("DECL %s\n", name.c_str());
 
 	Variable* newVar = new Variable(name, variableType);
 	currentScope->symbolTable[name] = newVar;

@@ -1,6 +1,6 @@
 #include "Token.h"
 
-const std::string Token::GetTypeString()
+/*const std::string Token::GetTypeString()
 {
 	unsigned char charType = (unsigned char)(type);
 
@@ -41,3 +41,4 @@ const std::string Token::GetTypeString()
 	}
 
 }
+*/

@@ -15,10 +15,17 @@ public:
 private:
 	void Statements();
 	void Statement();
-	void Expression();
+
+//	void Expression(int precedence = 12);
+	void Expression(TokenType level = TokenType::Comma);
+
 	void Factor();
-	void Term();
+	//void Term();
 	void Assignment();
+
+	void IfBlock();
+
+	//void Comparison();
 
 	void Expect(TokenType tokenType);
 	void UnexpectedTokenError();
